@@ -128,12 +128,12 @@ def send_confirmation(email):
     flash('A confirmation email has been sent.', 'success')
     return redirect(url_for('user.unconfirmed'))
 
-
+#token generation for email confirmation
 def generate_confirmation_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email, salt=app.config['SECURITY_PASSWORD_SALT'])
 
-
+#confirming email token
 def confirm_token(token, expiration=3600):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     try:
@@ -146,7 +146,7 @@ def confirm_token(token, expiration=3600):
         return False
     return email
 
-
+#path from confirmation email
 @app.route('/confirm/<token>')
 @login_required
 def confirm_email(token):
