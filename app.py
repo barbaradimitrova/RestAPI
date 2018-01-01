@@ -80,6 +80,7 @@ def new_user():
     send_confirmation(email)
     return jsonify({'Please check you email to confirm registration.'})
 
+#getting a user from the DB
 @app.route('/api/users/<int:id>')
 def get_user(id):
     user = User.query.get(id)
@@ -87,19 +88,20 @@ def get_user(id):
         abort(400)
     return jsonify({'email': user.email})
 
-
+#allowing access with token after correct log in
 @app.route('/api/token')
 @auth.login_required
 def get_auth_token():
     token = g.user.generate_auth_token(600)
     return jsonify({'token': token.decode('ascii'), 'duration': 600})
 
-
+#welcome log in
 @app.route('/api/resource')
 @auth.login_required
 def get_resource():
     return jsonify({'data': 'Hello, %s!' % g.user.email})
 
+#email
 @app.route("/")
 def send_email(to, subject, template):
     msg = Message(
@@ -110,7 +112,7 @@ def send_email(to, subject, template):
     )
     mail.send(msg)
 
-
+#sendinf verification email
 @app.route('/send')
 def send_confirmation(email):
     token = generate_confirmation_token(email)
