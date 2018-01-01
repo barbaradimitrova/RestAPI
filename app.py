@@ -18,7 +18,7 @@ from werkzeug.utils import redirect
 
 app = Flask(__name__)
 mail = Mail(app)
-app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy dog'
+app.config['SECRET_KEY'] = 'once upon a time'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['N_TOKENS'] = 1
@@ -58,7 +58,7 @@ class User(db.Model):
 def verify_password(email, password):
     user = User.query.filter_by(email=email).first()
     if not user or not user.verify_password(password):
-        abort(401) #can not log in
+        abort(400) #can not log in
         return jsonify({'User email or password incorrect. Access Denied.'})
     g.user = user
     return True
@@ -80,6 +80,7 @@ def new_user():
     send_confirmation(email)
     return jsonify({'Please check you email to confirm registration.'})
 
+#getting a user from the DB
 @app.route('/api/users/<int:id>')
 def get_user(id):
     user = User.query.get(id)
@@ -87,19 +88,20 @@ def get_user(id):
         abort(400)
     return jsonify({'email': user.email})
 
-
+#allowing access with token after correct log in
 @app.route('/api/token')
 @auth.login_required
 def get_auth_token():
     token = g.user.generate_auth_token(600)
     return jsonify({'token': token.decode('ascii'), 'duration': 600})
 
-
+#welcome log in
 @app.route('/api/resource')
 @auth.login_required
 def get_resource():
     return jsonify({'data': 'Hello, %s!' % g.user.email})
 
+#email
 @app.route("/")
 def send_email(to, subject, template):
     msg = Message(
@@ -110,7 +112,7 @@ def send_email(to, subject, template):
     )
     mail.send(msg)
 
-
+#sendinf verification email
 @app.route('/send')
 def send_confirmation(email):
     token = generate_confirmation_token(email)
@@ -126,12 +128,12 @@ def send_confirmation(email):
     flash('A confirmation email has been sent.', 'success')
     return redirect(url_for('user.unconfirmed'))
 
-
+#token generation for email confirmation
 def generate_confirmation_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email, salt=app.config['SECURITY_PASSWORD_SALT'])
 
-
+#confirming email token
 def confirm_token(token, expiration=3600):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     try:
@@ -144,7 +146,7 @@ def confirm_token(token, expiration=3600):
         return False
     return email
 
-
+#path from confirmation email
 @app.route('/confirm/<token>')
 @login_required
 def confirm_email(token):
