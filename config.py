@@ -14,7 +14,6 @@ def _get_bool_env_var(varname, default=None):
         return bool(value)
 
 class BaseConfig():
-    SECRET_KEY = 'my_precious'
     SECURITY_PASSWORD_SALT = 'my_precious_two'
     MAIL_SERVER = os.environ.get('APP_MAIL_SERVER', 'smtp.googlemail.com')
     MAIL_PORT = int(os.environ.get('APP_MAIL_PORT', 465))

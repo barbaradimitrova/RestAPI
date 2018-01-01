@@ -18,7 +18,7 @@ from werkzeug.utils import redirect
 
 app = Flask(__name__)
 mail = Mail(app)
-app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy dog'
+app.config['SECRET_KEY'] = 'once upon a time'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['N_TOKENS'] = 1
@@ -58,7 +58,7 @@ class User(db.Model):
 def verify_password(email, password):
     user = User.query.filter_by(email=email).first()
     if not user or not user.verify_password(password):
-        abort(401) #can not log in
+        abort(400) #can not log in
         return jsonify({'User email or password incorrect. Access Denied.'})
     g.user = user
     return True
