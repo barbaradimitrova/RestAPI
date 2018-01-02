@@ -6,7 +6,6 @@ from flask import Flask, abort, request, jsonify, g, url_for, flash, render_temp
 from flask_mail import Message, Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
-from flask_login import login_required, current_user
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired, URLSafeTimedSerializer)
@@ -19,9 +18,19 @@ from werkzeug.utils import redirect
 app = Flask(__name__)
 mail = Mail(app)
 app.config['SECRET_KEY'] = 'once upon a time'
+app.config['SECURITY_PASSWORD_SALT'] = 'my_precious_two'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['N_TOKENS'] = 1
+app.config['MAIL_SERVER'] = os.environ.get('APP_MAIL_SERVER', 'smtp.googlemail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('APP_MAIL_PORT', 465))
+
+    # mail authentication
+app.config['MAIL_USERNAME'] = os.environ.get('APP_MAIL_USERNAME', None)
+app.config['MAIL_PASSWORD'] = os.environ.get('APP_MAIL_PASSWORD', None)
+
+    # mail accounts
+app.config['MAIL_DEFAULT_SENDER'] = 'from@example.com'
 # extensions
 db = SQLAlchemy(app)
 auth = HTTPBasicAuth()
@@ -49,38 +58,36 @@ class User(db.Model):
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
 
-    def verify_email(email):
-        return validate_email(email,check_mx=True)
 
-
-#user log in
-@auth.verify_password('/api/users/login')
-def verify_password(email, password):
+# user log in
+@app.route('/api/users/login', methods=['POST'])
+def verify_user():
+    email = request.json.get('email')
+    password = request.json.get('password')
     user = User.query.filter_by(email=email).first()
     if not user or not user.verify_password(password):
-        abort(400) #can not log in
-        return jsonify({'User email or password incorrect. Access Denied.'})
+        return jsonify({'Error': 'User email or password incorrect. Access Denied.'})
     g.user = user
-    return True
+    return jsonify({'data': 'Hello, %s!' % g.user.email})
 
-#user sign up
+
+# user sign up
 @app.route('/api/users/signup', methods=['POST'])
 def new_user():
     email = request.json.get('email')
     password = request.json.get('password')
     if email is None or password is None:
-        abort(400)    # missing arguments
+        return jsonify({'Error': 'Please provide email and password'})
     if User.query.filter_by(email=email).first() is not None:
-        abort(400)    # existing user
-    if not email.verify_email(email):
-        abort(400)   # not valid email
+        return jsonify({'Error': 'User already exists:%s' % email})
+    if not validate_email(email,check_mx=True):
+        return jsonify({'Error':'Invalid email:%s' % email})
     user = User(email, password, confirmed=False)
-    db.session.add(user)
-    db.session.commit()
     send_confirmation(email)
-    return jsonify({'Please check you email to confirm registration.'})
+    return jsonify({'Info': 'Please check you email to confirm registration:%s' % user.email})
 
-#getting a user from the DB
+
+# getting a user from the DB
 @app.route('/api/users/<int:id>')
 def get_user(id):
     user = User.query.get(id)
@@ -95,13 +102,16 @@ def get_auth_token():
     token = g.user.generate_auth_token(600)
     return jsonify({'token': token.decode('ascii'), 'duration': 600})
 
-#welcome log in
+
+# welcome log in
 @app.route('/api/resource')
 @auth.login_required
 def get_resource():
+    flash('Welcome!', 'success')
     return jsonify({'data': 'Hello, %s!' % g.user.email})
 
-#email
+
+# email
 @app.route("/")
 def send_email(to, subject, template):
     msg = Message(
@@ -112,13 +122,14 @@ def send_email(to, subject, template):
     )
     mail.send(msg)
 
-#sendinf verification email
+
+# sending verification email
 @app.route('/send')
 def send_confirmation(email):
     token = generate_confirmation_token(email)
-    confirm_url = url_for('user.confirm_email', token=token, _external=True)
+    confirm_url = url_for('confirm_email', token=token, _external=True)
 
-    html = "<p>Hello! Thanks for signing up. Please follow this link to activate your account:</p>\
+    html = "<p>Welcome! Thanks for signing up. Please follow this link to activate your account:</p>\
     <p><a href={}</a></p>\
     <br>\
     <p>Regards!</p>".format(confirm_url)
@@ -126,14 +137,16 @@ def send_confirmation(email):
     subject = "Please confirm your email"
     send_email(email, subject, html)
     flash('A confirmation email has been sent.', 'success')
-    return redirect(url_for('user.unconfirmed'))
+    return redirect(url_for('unconfirmed'))
 
-#token generation for email confirmation
+
+# token generation for email confirmation
 def generate_confirmation_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email, salt=app.config['SECURITY_PASSWORD_SALT'])
 
-#confirming email token
+
+# confirming email token
 def confirm_token(token, expiration=3600):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     try:
@@ -146,15 +159,15 @@ def confirm_token(token, expiration=3600):
         return False
     return email
 
-#path from confirmation email
+
+# path from confirmation email
 @app.route('/confirm/<token>')
-@login_required
 def confirm_email(token):
-    if current_user.confirmed:
+    if User.confirmed:
         flash('Account already confirmed. Please login.', 'success')
         return redirect(url_for('main.home'))
     email = confirm_token(token)
-    user = User.query.filter_by(email=current_user.email).first_or_404()
+    user = User.query.filter_by(email=User.email).first_or_404()
     if user.email == email:
         user.confirmed = True
         user.confirmed_on = datetime.datetime.now()
@@ -164,6 +177,13 @@ def confirm_email(token):
     else:
         flash('The confirmation link is invalid or has expired.', 'danger')
     return redirect(url_for('main.home'))
+
+
+@app.route('/unconfirmed')
+def unconfirmed():
+    if User.confirmed:
+        return redirect(url_for('main.home'))
+    flash('Please confirm your account!', 'warning')
 
 
 if __name__ == '__main__':
