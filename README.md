@@ -1,45 +1,51 @@
-# Vimcar Coding Challenge: Backend
+# Run python app.py
+To sign up:
+curl -i -X POST -H "Content-Type: application/json" -d '{"email":"barbaradimm@yahoo.de","password":"python"}' http://127.0.0.1:5000/api/users/signup
 
-Welcome to the Vimcar Coding Challenge! We would like to see how you think and solve problems. This is an experiment to see how you design applications and write code. Feel free to use frameworks or libraries of your choice to achieve the goal.
+    HTTP/1.0 200 OK
+    Content-Type: application/json
+    Set-Cookie: session=.eJyrVopPy0kszkgtVrKKrlZSKIFQSUpWSsnGYVmRRmFVyeW2tkq1OlDRwGCnrCQj09zECK-SyIiggiQjk_SocMOMxPDy9ER3typPd6-cqHCT9GSjsNIUZxOgzlggBACESiDQ.DS1ARg.icRfRzxIEQ_eWxTqx8VGBDOEGfs; HttpOnly; Path=/
+    Content-Length: 84
+    Server: Werkzeug/0.12.2 Python/2.7.13
+    Date: Tue, 02 Jan 2018 16:09:42 GMT
 
-When you've finished your work, either upload your challenge to GitHub and let us know, or send the source code directly via email.
-
-
-## Your Task
-Most websites provide the possibility to create a personal user account to gain access to additional features or personalized content.
- 
-The challenge is to create a simple (preferably [Flask](http://flask.pocoo.org/) based) application which provides an RESTful API with the following features:
-
-#### Sign Up
-- the user can create a new account with a given email address and password
-- the user receives an confirmation email 
-- for account activation, the user has to click an activation link, provided in the email
-
-#### Authentication
-- the user can log in to the system with the chosen email address and password
+    {
+      "Info": "Please check you email to confirm registration:barbaradimm@yahoo.de"
+    }
 
 
-#### Authorization
-- the user can access a protected resource only if he has been authenticated
-- anonymous access to these resources may not be possible
+if same request is done (even if not confirmed):
+curl -i -X POST -H "Content-Type: application/json" -d '{"email":"barbaradimm@yahoo.ca","password":"python"}' http://127.0.0.1:5000/api/users/signup
+    HTTP/1.0 200 OK
+    Content-Type: application/json
+    Content-Length: 58
+    Server: Werkzeug/0.12.2 Python/2.7.13
+    Date: Tue, 02 Jan 2018 16:09:31 GMT
 
+    {
+      "Error": "User already exists:barbaradimm@yahoo.ca"
+    }
 
-## What we expect
-- a working application that exposes a RESTful API, which allows to sign up, sign in and only then to access a protected resource 
-- clean, well structured code that follows best practices
-- document the code in the way you think it fits best
-- the user accounts should be stored in some kind of persistence
+if: wrong json input:
+curl -i -X POST -H "Content-Type: application/json" -d '{"username":"barbaradimm@yahoo.de","password":"python"}' http://127.0.0.1:5000/api/users/signup
+    HTTP/1.0 200 OK
+    Content-Type: application/json
+    Content-Length: 51
+    Server: Werkzeug/0.12.2 Python/2.7.13
+    Date: Tue, 02 Jan 2018 16:10:58 GMT
 
-## Voluntary Additions
-- unit and/or functional tests
- - an explanation of how you decided what tests to write
-- a production-ready deployment configuration (means: not using the Flask development server)
-- Docker setup (to provision the whole stack via `docker-compose up`)
- - a `Dockerfile` to build the Docker image
- - a `docker-compose.yml` to describe the full stack
-- explanations, why you chose a specific implementation or pattern, framework or library compared to other options (e.g. for cross-request authentication) 
+    {
+      "Error": "Please provide email and password"
+    }
 
+To sign in:
+curl -u barbara.dimitrova@gmail.com:python123 -i -X GET http://127.0.0.1:5000/api/resource
+    HTTP/1.0 200 OK
+    Content-Type: application/json
+    Content-Length: 51
+    Server: Werkzeug/0.12.2 Python/2.7.13
+    Date: Tue, 02 Jan 2018 16:11:57 GMT
 
-## Not expected
-- it's not required to connect the API to a frontend or website, to provide sign up or login forms, etc.
-- the email does not need to be send over the wire. Using e.g. [Mailhog](https://github.com/mailhog/MailHog) or just logging the email body is totally fine, as long as it's possible to receive and use the activation link
+    {
+      "Data": "Hello, barbara.dimitrova@gmail.com"
+    }
