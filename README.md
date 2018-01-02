@@ -14,7 +14,7 @@ curl -i -X POST -H "Content-Type: application/json" -d '{"email":"barbaradimm@ya
     }
 
 
-if same request is done (even if not confirmed):
+if same request is done (and the user was confirmed):
 curl -i -X POST -H "Content-Type: application/json" -d '{"email":"barbaradimm@yahoo.ca","password":"python"}' http://127.0.0.1:5000/api/users/signup
     HTTP/1.0 200 OK
     Content-Type: application/json

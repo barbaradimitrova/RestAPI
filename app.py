@@ -65,7 +65,7 @@ def verify_user():
     email = request.json.get('email')
     password = request.json.get('password')
     user = User.query.filter_by(email=email).first()
-    if not user or not user.verify_password(password):
+    if not user or not user.verify_password(password) or not user.confirmed:
         return jsonify({'Error': 'User email or password incorrect. Access Denied.'})
     g.user = user
     return jsonify({'data': 'Hello, %s!' % g.user.email})
@@ -83,8 +83,6 @@ def new_user():
     if not validate_email(email,check_mx=True):
         return jsonify({'Error':'Invalid email:%s' % email})
     user = User(email, password, confirmed=False)
-    db.session.add(user)
-    db.session.commit()
     send_confirmation(email)
     return jsonify({'Info': 'Please check you email to confirm registration:%s' % user.email})
 
