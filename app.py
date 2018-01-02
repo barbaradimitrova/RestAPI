@@ -65,7 +65,7 @@ def verify_user():
     email = request.json.get('email')
     password = request.json.get('password')
     user = User.query.filter_by(email=email).first()
-    if not user or not user.verify_password(password) or not user.confirmed:
+    if not user or not user.verify_password(password):
         return jsonify({'Error': 'User email or password incorrect. Access Denied.'})
     g.user = user
     return jsonify({'data': 'Hello, %s!' % g.user.email})
