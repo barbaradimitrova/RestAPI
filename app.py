@@ -58,19 +58,17 @@ class User(db.Model):
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
 
-def verify_email(email):
-    return validate_email(email,check_mx=True)
-
 
 # user log in
 @app.route('/api/users/login', methods=['POST'])
-def verify_password(email, password):
+def verify_user():
+    email = request.json.get('email')
+    password = request.json.get('password')
     user = User.query.filter_by(email=email).first()
     if not user or not user.verify_password(password):
-        abort(400)      # can not log in
-        return jsonify({'Error':'User email or password incorrect. Access Denied.'})
+        return jsonify({'Error': 'User email or password incorrect. Access Denied.'})
     g.user = user
-    return True
+    return jsonify({'data': 'Hello, %s!' % g.user.email})
 
 
 # user sign up
@@ -82,7 +80,7 @@ def new_user():
         return jsonify({'Error': 'Please provide email and password'})
     if User.query.filter_by(email=email).first() is not None:
         return jsonify({'Error': 'User already exists:%s' % email})
-    if not verify_email(email):
+    if not validate_email(email,check_mx=True):
         return jsonify({'Error':'Invalid email:%s' % email})
     user = User(email, password, confirmed=False)
     db.session.add(user)
