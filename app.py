@@ -6,7 +6,6 @@ from flask import Flask, abort, request, jsonify, g, url_for, flash, render_temp
 from flask_mail import Message, Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_httpauth import HTTPBasicAuth
-from flask_login import login_required, current_user
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired, URLSafeTimedSerializer)
@@ -54,7 +53,7 @@ class User(db.Model):
 
 
 #user log in
-@auth.verify_password('/api/users/login')
+@app.route('/api/users/login', methods=['POST'])
 def verify_password(email, password):
     user = User.query.filter_by(email=email).first()
     if not user or not user.verify_password(password):
@@ -118,7 +117,7 @@ def send_confirmation(email):
     token = generate_confirmation_token(email)
     confirm_url = url_for('user.confirm_email', token=token, _external=True)
 
-    html = "<p>Hello! Thanks for signing up. Please follow this link to activate your account:</p>\
+    html = "<p>Welcome! Thanks for signing up. Please follow this link to activate your account:</p>\
     <p><a href={}</a></p>\
     <br>\
     <p>Regards!</p>".format(confirm_url)
@@ -148,13 +147,12 @@ def confirm_token(token, expiration=3600):
 
 #path from confirmation email
 @app.route('/confirm/<token>')
-@login_required
 def confirm_email(token):
-    if current_user.confirmed:
+    if User.confirmed:
         flash('Account already confirmed. Please login.', 'success')
         return redirect(url_for('main.home'))
     email = confirm_token(token)
-    user = User.query.filter_by(email=current_user.email).first_or_404()
+    user = User.query.filter_by(email=User.email).first_or_404()
     if user.email == email:
         user.confirmed = True
         user.confirmed_on = datetime.datetime.now()
