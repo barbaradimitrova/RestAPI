@@ -40,16 +40,16 @@ auth = HTTPBasicAuth()
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(32), index=True)
+    email = db.Column(db.String(32), index=True)
     password_hash = db.Column(db.String(64))
     registered_on = db.Column(db.DateTime, nullable=False)
     confirmed = db.Column(db.Boolean, nullable=False, default=False)
     confirmed_on = db.Column(db.DateTime, nullable=True)
     password_reset_token = db.Column(db.String, nullable=True)
 
-    def __init__(self, username, password, confirmed,
+    def __init__(self, email, password, confirmed,
                  confirmed_on=None):
-        self.username = username
+        self.email = email
         self.password = pwd_context.encrypt(password)
         self.registered_on = datetime.datetime.now()
         self.confirmed = confirmed
@@ -76,11 +76,11 @@ def verify_password(email, password):
 # user sign up
 @app.route('/api/users/signup', methods=['POST'])
 def new_user():
-    email = request.json.get('username')
+    email = request.json.get('email')
     password = request.json.get('password')
     if email is None or password is None:
         return jsonify({'Error': 'Please provide email and password'})
-    if User.query.filter_by(username=email).first() is not None:
+    if User.query.filter_by(email=email).first() is not None:
         return jsonify({'Error': 'User already exists:%s' % email})
     if not verify_email(email):
         return jsonify({'Error':'Invalid email:%s' % email})
@@ -88,7 +88,7 @@ def new_user():
     db.session.add(user)
     db.session.commit()
     send_confirmation(email)
-    return jsonify({'Info': 'Please check you email to confirm registration:%s' % user.username})
+    return jsonify({'Info': 'Please check you email to confirm registration:%s' % user.email})
 
 
 # getting a user from the DB
