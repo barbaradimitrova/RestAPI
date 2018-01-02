@@ -68,7 +68,7 @@ def verify_password(email, password):
     user = User.query.filter_by(email=email).first()
     if not user or not user.verify_password(password):
         abort(400)      # can not log in
-        return jsonify({'User email or password incorrect. Access Denied.'})
+        return jsonify({'Error':'User email or password incorrect. Access Denied.'})
     g.user = user
     return True
 
@@ -79,20 +79,16 @@ def new_user():
     email = request.json.get('username')
     password = request.json.get('password')
     if email is None or password is None:
-        flash('Please provide email and password')
-       # abort(400)    # missing arguments
-
+        return jsonify({'Error': 'Please provide email and password'})
     if User.query.filter_by(username=email).first() is not None:
-        flash('User exists already',"danger")
-        #abort(400)    # existing user
+        return jsonify({'Error': 'User already exists:%s' % email})
     if not verify_email(email):
-        #abort(400)   # not valid email
-        return jsonify({'Invalid email'})
+        return jsonify({'Error':'Invalid email:%s' % email})
     user = User(email, password, confirmed=False)
     db.session.add(user)
     db.session.commit()
     send_confirmation(email)
-    return jsonify({'Please check you email to confirm registration.'})
+    return jsonify({'Info': 'Please check you email to confirm registration:%s' % user.username})
 
 
 # getting a user from the DB
@@ -128,7 +124,7 @@ def send_email(to, subject, template):
         html=template,
         sender=app.config['MAIL_DEFAULT_SENDER']
     )
-    mail.send(msg)
+    #mail.send(msg)
 
 
 # sending verification email
@@ -145,7 +141,7 @@ def send_confirmation(email):
     subject = "Please confirm your email"
     send_email(email, subject, html)
     flash('A confirmation email has been sent.', 'success')
-    return redirect(url_for('user.unconfirmed'))
+    return redirect(url_for('unconfirmed'))
 
 
 # token generation for email confirmation
@@ -185,6 +181,13 @@ def confirm_email(token):
     else:
         flash('The confirmation link is invalid or has expired.', 'danger')
     return redirect(url_for('main.home'))
+
+
+@app.route('/unconfirmed')
+def unconfirmed():
+    if User.confirmed:
+        return redirect(url_for('main.home'))
+    flash('Please confirm your account!', 'warning')
 
 
 if __name__ == '__main__':
