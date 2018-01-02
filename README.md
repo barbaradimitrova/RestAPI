@@ -39,7 +39,7 @@ curl -i -X POST -H "Content-Type: application/json" -d '{"username":"barbaradimm
     }
 
 To sign in:
-curl -i -X POST -H "Content-Type: application/json" -d '{"username":"barbaradimm@yahoo.de","password":"python"}' http://127.0.0.1:5000/api/users/login
+curl -i -X POST -H "Content-Type: application/json" -d '{"email":"barbaradimm@yahoo.de","password":"python"}' http://127.0.0.1:5000/api/users/login
     HTTP/1.0 200 OK
     Content-Type: application/json
     Content-Length: 51
