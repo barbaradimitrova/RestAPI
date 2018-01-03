@@ -14,11 +14,11 @@ curl -i -X POST -H "Content-Type: application/json" -d '{"email":"barbaradimm@ya
     }
 
 
-console: (email output)
-<p>Welcome! Thanks for signing up. Please follow this link to activate your account:</p>    <p><a href=http://127.0.0.1:5000/confirm/ImJhcmJhcmFkaW1tQHlhaG9vLnBsIg.DS5Qcw.bMJonKgDripd_06TuvjyfSfb0J4</a></p>    <br>    <p>Regards!</p>
---===============4374545813729098331==--
+    console: (email output)
+    <p>Welcome! Thanks for signing up. Please follow this link to activate your account:</p>    <p><a href=http://127.0.0.1:5000/confirm/ImJhcmJhcmFkaW1tQHlhaG9vLnBsIg.DS5Qcw.bMJonKgDripd_06TuvjyfSfb0J4</a></p>    <br>    <p>Regards!</p>
+    --===============4374545813729098331==--
 
---===============2185778897636777441==--
+    --===============2185778897636777441==--
 
 
 
