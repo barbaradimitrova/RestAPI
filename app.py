@@ -120,7 +120,8 @@ def send_email(to, subject, template):
         html=template,
         sender=app.config['MAIL_DEFAULT_SENDER']
     )
-    mail.send(msg)
+    print msg
+   #mail.send(msg)
 
 
 # sending verification email
@@ -136,7 +137,6 @@ def send_confirmation(email):
 
     subject = "Please confirm your email"
     send_email(email, subject, html)
-    flash('A confirmation email has been sent.', 'success')
     return redirect(url_for('unconfirmed'))
 
 
@@ -184,7 +184,6 @@ def unconfirmed():
     if User.confirmed:
         return redirect(url_for('main.home'))
     flash('Please confirm your account!', 'warning')
-
 
 if __name__ == '__main__':
     if not os.path.exists('db.sqlite'):
